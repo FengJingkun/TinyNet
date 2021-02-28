@@ -31,17 +31,18 @@ int tcp_server::handle_connection_established(tcp_server* pServer)
     event_loop* pSubEventLoop = pServer->get_ThreadPool()->get_sub_event_loop();
 
     /** Create a new connection instance */
-    auto* pConnection = new tcp_connection(connFd, pSubEventLoop);
+    auto* pConnection = new tcp_connection();
 
     auto connectionAcceptedCallback = std::bind(onConnectionAccepted, pConnection);
     auto messageCallback = std::bind(onMessage, pConnection);
     auto writeCompletedCallback = std::bind(onWriteCompleted, pConnection);
     auto connectionClosedCallback = std::bind(onConnectionClosed, pConnection);
 
-    pConnection->set_callbacks(connectionAcceptedCallback,
-                               messageCallback,
-                               writeCompletedCallback,
-                               connectionClosedCallback);
+    pConnection->init(connFd, pSubEventLoop,
+                      std::move(connectionAcceptedCallback),
+                      std::move(messageCallback),
+                      std::move(writeCompletedCallback),
+                      std::move(connectionClosedCallback));
 
     return 0;
 }

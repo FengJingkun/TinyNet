@@ -5,6 +5,8 @@
 #ifndef REACTORSERVER_TCP_CONNECTION_H
 #define REACTORSERVER_TCP_CONNECTION_H
 
+#include <utility>
+
 #include "common.h"
 #include "event_loop.h"
 #include "channel.h"
@@ -13,8 +15,8 @@
 
 class tcp_connection {
 public:
-    tcp_connection(int connFd, event_loop* pLoop)
-            : pEventLoop(pLoop)
+    tcp_connection()
+            : pEventLoop(nullptr)
             , pChannel(nullptr)
             , pRecvBuffer(nullptr)
             , pSendBuffer(nullptr)
@@ -26,25 +28,15 @@ public:
             , request(nullptr)
             , response(nullptr)
     {
-        std::string name = "connection-" + std::to_string(connFd);
-        this->connName = std::move(name);
-
         this->pRecvBuffer = new buffer();
         this->pSendBuffer = new buffer();
-
-        this->init(connFd);
     }
 
-    void set_callbacks(connection_accepted_callback acceptedCbk,
-                       message_process_callback messageCbk,
-                       write_completed_callback writeCompletedCbk,
-                       connection_closed_callback connectionClosedCbk)
-    {
-        this->connectionAcceptedCallback = std::move(acceptedCbk);
-        this->messageCallback = std::move(messageCbk);
-        this->writeCompletedCallback = std::move(writeCompletedCbk);
-        this->connectionClosedCallback = std::move(connectionClosedCbk);
-    }
+    void init(int, event_loop*,
+              connection_accepted_callback,
+              message_process_callback,
+              write_completed_callback,
+              connection_closed_callback);
 
     buffer* get_sendBuffer()
     {
@@ -66,7 +58,7 @@ public:
         this->pEventLoop = nullptr;
         this->pChannel = nullptr;
 
-        this->connectionClosedCallback = nullptr;
+        this->connectionAcceptedCallback = nullptr;
         this->messageCallback = nullptr;
         this->writeCompletedCallback = nullptr;
         this->connectionClosedCallback = nullptr;
@@ -76,7 +68,7 @@ public:
         this->response = nullptr;
     }
 
-    /** close the connection, and free the related resource */
+    /** Close the connection, and free the related resource */
     void handle_connection_closed();
     /** Receive request data from socket, then store it to recvBuffer */
     static void handle_connection_read(tcp_connection*);
@@ -88,9 +80,6 @@ public:
     tcp_connection(const tcp_connection&) = delete;
     tcp_connection& operator=(const tcp_connection&) = delete;
     ~tcp_connection() = default;
-
-protected:
-    void init(int);
 
 private:
     std::string connName;
@@ -105,9 +94,13 @@ private:
       * Framework write response data to SendBuffer */
     buffer* pSendBuffer;
 
+    /** after connection established */
     connection_accepted_callback connectionAcceptedCallback;
+    /** processing request data */
     message_process_callback messageCallback;
+    /** after response data has been sent */
     write_completed_callback writeCompletedCallback;
+    /**  */
     connection_closed_callback connectionClosedCallback;
 
     void* data;

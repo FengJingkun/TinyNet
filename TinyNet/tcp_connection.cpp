@@ -4,21 +4,34 @@
 
 #include "tcp_connection.h"
 
-
-void tcp_connection::init(int connFd)
+void tcp_connection::init(int connFd, event_loop* pSubLoop,
+                          connection_accepted_callback acceptedCbk,
+                          message_process_callback messageCbk,
+                          write_completed_callback writeCompletedCbk,
+                          connection_closed_callback connectionClosedCbk)
 {
-    channel* curChannel = channel::channel_new(connFd, EventType::EventRead);
+    std::string name = "connection-" + std::to_string(connFd);
+    this->connName = std::move(name);
+
+    this->pEventLoop = pSubLoop;
+
+    this->connectionAcceptedCallback = std::move(acceptedCbk);
+    this->messageCallback = std::move(messageCbk);
+    this->writeCompletedCallback = std::move(writeCompletedCbk);
+    this->connectionClosedCallback = std::move(connectionClosedCbk);
+
+    channel* connChannel = channel::channel_new(connFd, EventType::EventRead);
 
     auto read_callback = std::bind(&tcp_connection::handle_connection_read, this);
     auto write_callback = std::bind(&tcp_connection::handle_connection_write, this);
-    curChannel->set_read_callback(std::move(read_callback));
-    curChannel->set_write_callback(std::move(write_callback));
+    connChannel->set_read_callback(std::move(read_callback));
+    connChannel->set_write_callback(std::move(write_callback));
 
-    this->pChannel = curChannel;
+    this->pEventLoop->add_channel_event(connChannel);
+
+    this->pChannel = connChannel;
     if (this->connectionAcceptedCallback != nullptr)
         this->connectionAcceptedCallback();
-
-    this->pEventLoop->add_channel_event(curChannel);
 }
 
 void tcp_connection::handle_connection_closed()
@@ -92,6 +105,6 @@ int tcp_connection::connection_send_buffer(tcp_connection* pTCPConnection)
     buffer* pSendBuffer = pTCPConnection->pSendBuffer;
     int toSendSize = pSendBuffer->readable_size();
 
-
     pSendBuffer->readIndex += toSendSize;
+    return 0;
 }
