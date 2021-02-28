@@ -5,27 +5,27 @@
 #ifndef REACTORSERVER_CALLBACKS_H
 #define REACTORSERVER_CALLBACKS_H
 
-
 #include "common.h"
 #include "tcp_connection.h"
 
 
-// typedef std::function<void(void)> connection_accepted_callback;
-// typedef std::function<void(void)> message_callback;
-// typedef std::function<void(void)> write_completed_callback;
-// typedef std::function<void(void)> connection_closed_callback;
+/** a toy request process func just for test */
+char rot13_char(char);
 
+
+/** call after the new connection accepted */
 void onConnectionAccepted(tcp_connection *);
 
 
+/** call to process the request data */
 int onMessage(tcp_connection *);
 
 
-//数据通过buffer写完之后的callback
+/** call after response data has been sent */
 void onWriteCompleted(tcp_connection *);
 
 
-//连接关闭之后的callback
+/** the tcp_connection obj will destroy after calling this func */
 void onConnectionClosed(tcp_connection *);
 
 

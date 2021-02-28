@@ -70,12 +70,13 @@ public:
 
     /** Close the connection, and free the related resource */
     void handle_connection_closed();
-    /** Receive request data from socket, then store it to recvBuffer */
+    /** Register as Channel read callback */
     static void handle_connection_read(tcp_connection*);
-    /** Send response data stored in sendBuffer to socket */
+    /** Register as Channel write callback */
     static void handle_connection_write(tcp_connection*);
 
-    static int connection_send_buffer(tcp_connection*);
+    /**  */
+//    int connection_send_response();
 
     tcp_connection(const tcp_connection&) = delete;
     tcp_connection& operator=(const tcp_connection&) = delete;
@@ -94,13 +95,13 @@ private:
       * Framework write response data to SendBuffer */
     buffer* pSendBuffer;
 
-    /** after connection established */
+    /** call after the new connection accepted */
     connection_accepted_callback connectionAcceptedCallback;
-    /** processing request data */
+    /** call to process the request data */
     message_process_callback messageCallback;
-    /** after response data has been sent */
+    /** call after response data has been sent */
     write_completed_callback writeCompletedCallback;
-    /**  */
+    /** the tcp_connection obj will destroy after calling this func */
     connection_closed_callback connectionClosedCallback;
 
     void* data;

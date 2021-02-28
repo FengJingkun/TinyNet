@@ -46,16 +46,25 @@ void tcp_connection::handle_connection_closed()
 void tcp_connection::handle_connection_read(tcp_connection* pTCPConnection)
 {
     buffer* pRecvBuffer = pTCPConnection->pRecvBuffer;
+    event_loop* pEventLoop = pTCPConnection->pEventLoop;
     channel* pChannel = pTCPConnection->pChannel;
 
     int fd = pChannel->get_channel_fd();
 
-    /** RecvBuffer receive request data from socket first */
-    int n = pRecvBuffer->buffer_socket_read(fd);
+    /** RecvBuffer receive request data from socket */
+    int n = pRecvBuffer->recv_from_socket(fd);
     if (n > 0) {
-        /** Store request data to recvBuffer successfully, then processing request */
-        if (pTCPConnection->messageCallback != nullptr)
-            pTCPConnection->messageCallback();
+        /** Request data has been written to recvBuffer, start processing */
+        if (pTCPConnection->messageCallback != nullptr) {
+            int res = pTCPConnection->messageCallback();
+            if (res == 0) {
+                /** make channel writeable */
+                if (!pChannel->is_write_enabled()) {
+                    pChannel->channel_write_enable();
+                    pEventLoop->update_channel_event(pChannel);
+                }
+            }
+        }
     }
     else {
         LOG_ERROR("%s: Receive request data from socket failed, close the connection",
@@ -99,12 +108,10 @@ void tcp_connection::handle_connection_write(tcp_connection* pTCPConnection)
  * 应用程序将处理完的数据写入buffer, 由框架负责将buffer中的数据通过socket发送出去
  * 先往socket发送数据，若发送成功则不使用buffer，否则将剩余未发送数据写入buffer
  **/
-int tcp_connection::connection_send_buffer(tcp_connection* pTCPConnection)
-{
-    channel* pChannel = pTCPConnection->pChannel;
-    buffer* pSendBuffer = pTCPConnection->pSendBuffer;
-    int toSendSize = pSendBuffer->readable_size();
-
-    pSendBuffer->readIndex += toSendSize;
-    return 0;
-}
+//int tcp_connection::connection_send_response()
+//{
+//    int toSendSize = pSendBuffer->readable_size();
+//
+//    pSendBuffer->readIndex += toSendSize;
+//    return 0;
+//}

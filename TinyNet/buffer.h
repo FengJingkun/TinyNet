@@ -36,7 +36,7 @@ public:
     }
 
     /** put raw data from socket to buffer */
-    int buffer_socket_read(int fd) {
+    int recv_from_socket(int fd) {
         char additional_buffer[1024];
 
         struct iovec vec[2];

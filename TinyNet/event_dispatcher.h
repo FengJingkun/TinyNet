@@ -38,5 +38,6 @@ protected:
     channel_activate_callback activate_channel;
 };
 
+event_dispatcher* make_dispatcher(std::string);
 
 #endif //REACTORSERVER_EVENT_DISPATCHER_H

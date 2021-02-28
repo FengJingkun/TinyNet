@@ -5,10 +5,21 @@
 #include "callbacks.h"
 
 
+char rot13_char(char c) {
+    if ((c >= 'a' && c <= 'm') || (c >= 'A' && c <= 'M'))
+        return c + 13;
+    else if ((c >= 'n' && c <= 'z') || (c >= 'N' && c <= 'Z'))
+        return c - 13;
+    else
+        return c;
+}
+
+
 void onConnectionAccepted(tcp_connection* pTCPConnection)
 {
     printf("connection completed\n");
 }
+
 
 int onMessage(tcp_connection* pTCPConnection)
 {
@@ -17,20 +28,18 @@ int onMessage(tcp_connection* pTCPConnection)
 
     while (recvBuffer->readable_size() != 0) {
         char clientChar = recvBuffer->read_buffer();
-        char serverChar = clientChar + 13;
+        char serverChar = rot13_char(clientChar);
         sendBuffer->write_buffer(&serverChar, sizeof serverChar);
     }
-
-    tcp_connection::connection_send_buffer(pTCPConnection);
     return 0;
 }
 
-//数据通过buffer写完之后的callback
+
 void onWriteCompleted(tcp_connection* pTCPConnection) {
     printf("write completed\n");
 }
 
-//连接关闭之后的callback
+
 void onConnectionClosed(tcp_connection* pTCPConnection) {
     printf("connection closed\n");
 }
