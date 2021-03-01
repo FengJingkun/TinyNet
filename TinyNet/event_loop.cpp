@@ -9,7 +9,8 @@ event_loop* event_loop::event_loop_init(std::string &&name)
 {
     std::string realName = name.empty()? "mainEventLoop": std::move(name);
 
-    event_dispatcher* pDispatcher = new poll_dispatcher("poll");
+    event_dispatcher* pDispatcher = make_dispatcher(DispatcherType::Poll);
+//    event_dispatcher* pDispatcher = new poll_dispatcher("poll");
 
     auto* pEventLoop = new event_loop(std::move(realName), pDispatcher);
 

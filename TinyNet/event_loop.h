@@ -11,6 +11,7 @@
 #include "poll_dispatcher.h"
 #include "channel.h"
 #include "log.h"
+#include "utils.h"
 
 #include <string>
 #include <unordered_map>
