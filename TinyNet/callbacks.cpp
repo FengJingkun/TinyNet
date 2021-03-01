@@ -5,7 +5,8 @@
 #include "callbacks.h"
 
 
-char rot13_char(char c) {
+char rot13_char(char c)
+{
     if ((c >= 'a' && c <= 'm') || (c >= 'A' && c <= 'M'))
         return c + 13;
     else if ((c >= 'n' && c <= 'z') || (c >= 'N' && c <= 'Z'))
@@ -35,11 +36,13 @@ int onMessage(tcp_connection* pTCPConnection)
 }
 
 
-void onWriteCompleted(tcp_connection* pTCPConnection) {
+void onWriteCompleted(tcp_connection* pTCPConnection)
+{
     printf("write completed\n");
 }
 
 
-void onConnectionClosed(tcp_connection* pTCPConnection) {
+void onConnectionClosed(tcp_connection* pTCPConnection)
+{
     printf("connection closed\n");
 }

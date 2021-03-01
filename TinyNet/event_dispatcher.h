@@ -12,6 +12,12 @@
 #include <utility>
 
 
+enum DispatcherType: int {
+    Poll = 1,
+    Epoll = 2
+};
+
+
 class dispatcher_data {
 public:
     dispatcher_data(): handleEventCounts(0) {};

@@ -6,6 +6,7 @@
 #define REACTORSERVER_BUFFER_H
 
 #include "common.h"
+#include "log.h"
 
 
 class buffer {
@@ -15,76 +16,87 @@ public:
         data = static_cast<char*>(std::malloc(1024));
     }
 
-    char* locate_CRLF() const {
+    char* locate_CRLF() const
+    {
         auto* crlf = static_cast<char *>(memmem(this->data + this->readIndex,
                                                 this->readable_size(),
                                                 this->CRLF, 2));
         return crlf;
     }
 
-    char read_buffer() {
-        char ch = this->data[this->readIndex++];
-        return ch;
+    /** get request data from buffer to process */
+    char read_buffer()
+    {
+        char byte = this->data[this->readIndex++];
+        return byte;
     }
 
-    void write_buffer(void* rawData, size_t size) {
+    /** write response data to buffer after processing */
+    void write_buffer(void* rawData, int nbytes)
+    {
         if (data != nullptr) {
-            this->make_room(size);
-            std::memcpy(this->data + this->writeIndex, rawData, size);
-            this->writeIndex += size;
+            this->make_room(nbytes);
+            std::memcpy(this->data + this->writeIndex, rawData, nbytes);
+            this->writeIndex += nbytes;
         }
     }
 
-    /** put raw data from socket to buffer */
-    int recv_from_socket(int fd) {
+    /** receive request data from socket and write it to buffer */
+    int recv_from_socket(int fd)
+    {
+        int writableBytes = this->writeable_size();
         char additional_buffer[1024];
 
         struct iovec vec[2];
-        int max_writable = this->writeable_size();
         vec[0].iov_base = this->data + this->writeIndex;
-        vec[0].iov_len = max_writable;
+        vec[0].iov_len = writableBytes;
         vec[1].iov_base = additional_buffer;
-        vec[1].iov_len = sizeof(additional_buffer);
+        vec[1].iov_len = sizeof additional_buffer;
 
-        int result = readv(fd, vec, 2);
-        if (result < 0) {
+        int nbytes = readv(fd, vec, 2);
+        if (nbytes < 0) {
             return -1;
-        } else if (result <= max_writable) {
-            this->writeIndex += result;
-        } else { // result > max_writable
+        }
+        else if (nbytes <= writableBytes) {
+            this->writeIndex += nbytes;
+        }
+        else { // result > max_writable
             // 可能引起移动，也可能realloc扩容
+            this->make_room(nbytes);
             this->writeIndex = this->totalSize;
-            this->write_buffer(additional_buffer, result - max_writable);
+            this->write_buffer(additional_buffer, nbytes - writableBytes);
         }
 
-        return result;
+        return nbytes;
     }
 
-    int readable_size() const {
+    int readable_size() const
+    {
         return this->writeIndex - this->readIndex;
     }
 
-    int writeable_size() const {
+    int writeable_size() const
+    {
         return this->totalSize - this->writeIndex;
     }
 
-    int front_space_size() const {
+    int front_space_size() const
+    {
         return this->readIndex;
     }
 
-    void buffer_free() {
-        std::free(data);
-        readIndex = 0;
-        writeIndex = 0;
-        totalSize = 0;
-
-        this->~buffer();
+    void buffer_free()
+    {
+        std::free(this->data);
+        this->data = nullptr;
+        this->readIndex = 0;
+        this->writeIndex = 0;
+        this->totalSize = 0;
     }
 
-    ~buffer() = default;
-
 protected:
-    void make_room(int size) {
+    void make_room(int size)
+    {
         if (this->writeable_size() > size)
             return;
         else if (this->writeable_size() + this->front_space_size() > size) {
